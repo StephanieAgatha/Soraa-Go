@@ -6,7 +6,7 @@ SDK Boilerplate for restful api
 #### Installation
 
 `
-go get github.com/StephanieAgatha/Sora-Go
+go get github.com/StephanieAgatha/Soraa-Go
 `
 
 #### Copy whole .env.example and create a new .env
