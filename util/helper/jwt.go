@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func GenerateJWT(user model.UserCredentials, secretjwt string) (string, error) {
+func GenerateJWT(user model.UserCredentials, secretjwt []byte) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"issued_at": time.Now(),
 		"exp_at":    time.Now().Add(4 * time.Hour),
