@@ -5,11 +5,13 @@ import (
 	"github.com/StephanieAgatha/Soraa-Go/model"
 	"github.com/StephanieAgatha/Soraa-Go/usecase"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 )
 
 type UserController struct {
 	UserUC usecase.UserUsecase
 	gin    *gin.Engine
+	redisC *redis.Client
 }
 
 func (u UserController) CreateUserHandler(c *gin.Context) {
@@ -31,12 +33,13 @@ func (u UserController) CreateUserHandler(c *gin.Context) {
 
 // create route method
 func (u UserController) Route() {
-	u.gin.POST("/new", middleware.AuthMiddleware(), u.CreateUserHandler)
+	u.gin.POST("/new", middleware.AuthMiddleware(u.redisC), u.CreateUserHandler)
 }
 
-func NewUserController(uc usecase.UserUsecase, g *gin.Engine) *UserController {
+func NewUserController(uc usecase.UserUsecase, g *gin.Engine, rediss *redis.Client) *UserController {
 	return &UserController{
 		UserUC: uc,
 		gin:    g,
+		redisC: rediss,
 	}
 }

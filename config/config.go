@@ -21,9 +21,15 @@ type ApiConfig struct {
 	Port string
 }
 
+type RedisConfig struct {
+	Host     string
+	Password string
+}
+
 type Config struct {
 	*DbConfig
 	*ApiConfig
+	*RedisConfig
 }
 
 // init db
@@ -57,11 +63,28 @@ func (c *Config) ReadDbConfig() error {
 	return nil
 }
 
-func NewDbConfig() (*Config, error) {
+func (c *Config) ReadRedisConfig() error {
+	if err := helper.Loadenv(); err != nil {
+		return err
+	}
+
+	c.RedisConfig = &RedisConfig{
+		Host:     os.Getenv("REDIS_HOST"),
+		Password: os.Getenv("REDIS_PASSWORD"),
+	}
+
+	return nil
+}
+
+func NewConfig() (*Config, error) {
 	cfg := &Config{}
 
 	if err := cfg.ReadDbConfig(); err != nil {
 		return nil, fmt.Errorf("Failed to read db config %v", err.Error())
+	}
+
+	if err := cfg.ReadRedisConfig(); err != nil {
+		return nil, fmt.Errorf("Failed to read redis config %v", err.Error())
 	}
 
 	return cfg, nil

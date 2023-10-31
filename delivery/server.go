@@ -7,13 +7,15 @@ import (
 	"github.com/StephanieAgatha/Soraa-Go/delivery/middleware"
 	"github.com/StephanieAgatha/Soraa-Go/manager"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
 type Server struct {
-	um   manager.UsecaseManager
-	gin  *gin.Engine
-	host string
+	um     manager.UsecaseManager
+	gin    *gin.Engine
+	host   string
+	redisC *redis.Client
 }
 
 // middleware goes here
@@ -28,8 +30,8 @@ func (s *Server) InitMiddleware() {
 
 // controller
 func (s *Server) InitController() {
-	controller.NewUserController(s.um.UserUsecase(), s.gin).Route()
-	controller.NewUserCredentialController(s.um.UserCredUsecase(), s.gin).Route()
+	controller.NewUserController(s.um.UserUsecase(), s.gin, s.redisC).Route()
+	controller.NewUserCredentialController(s.um.UserCredUsecase(), s.gin, s.redisC).Route()
 }
 
 // run server
@@ -44,7 +46,7 @@ func (s *Server) Run() {
 
 func NewServer() *Server {
 	//define contrusctor from config
-	cfg, err := config.NewDbConfig()
+	cfg, err := config.NewConfig()
 	if err != nil {
 		fmt.Printf("Failed on config server %v", err.Error())
 	}
@@ -55,6 +57,9 @@ func NewServer() *Server {
 		fmt.Printf("Failed on construct infra %v", err.Error())
 	}
 
+	//get the Redis client from the infraManager
+	redisClient := im.RedisClient()
+
 	//constructor from repomanager
 	rm := manager.NewRepoManager(im)
 	//contructor from usecase manager
@@ -64,9 +69,11 @@ func NewServer() *Server {
 	host := fmt.Sprintf("%s:%s", cfg.ApiConfig.Host, cfg.ApiConfig.Port)
 	//return gin instance
 	g := gin.Default()
+
 	return &Server{
-		um:   um,
-		gin:  g,
-		host: host,
+		um:     um,
+		gin:    g,
+		host:   host,
+		redisC: redisClient,
 	}
 }

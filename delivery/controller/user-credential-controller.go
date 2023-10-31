@@ -1,14 +1,18 @@
 package controller
 
 import (
+	"context"
 	"github.com/StephanieAgatha/Soraa-Go/model"
 	"github.com/StephanieAgatha/Soraa-Go/usecase"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
+	"time"
 )
 
 type UserCredentialController struct {
 	userCredUc usecase.UserCredentialUsecase
 	gin        *gin.Engine
+	redisC     *redis.Client
 }
 
 func (u UserCredentialController) Register(c *gin.Context) {
@@ -47,7 +51,36 @@ func (u UserCredentialController) Login(c *gin.Context) {
 		return
 	}
 
+	//set user info to redis (email+token) with 24 hours exp
+	var ctx = context.Background()
+	if err = u.redisC.Set(ctx, "userEmail:"+userCred.Email, userToken, 24*time.Hour).Err(); err != nil {
+		c.AbortWithStatusJSON(500, gin.H{"Error": "Failed to save data to Redis"})
+		return
+	}
+
 	c.JSON(200, gin.H{"Data": userToken})
+}
+
+func (u UserCredentialController) Logout(c *gin.Context) {
+	var ctx = context.Background()
+
+	var data struct {
+		CustEmail string `json:"email"`
+	}
+
+	if err := c.ShouldBindJSON(&data); err != nil {
+		c.AbortWithStatusJSON(400, gin.H{"Error": "Wrong JSON Data"})
+		return
+	}
+
+	//delete token
+	err := u.redisC.Del(ctx, "userEmail:"+data.CustEmail).Err()
+	if err != nil {
+		c.AbortWithStatusJSON(500, gin.H{"Error": "Failed to logout"})
+		return
+	}
+
+	c.JSON(200, gin.H{"Message": "Logout successful"})
 }
 
 func (u UserCredentialController) Route() {
@@ -55,11 +88,13 @@ func (u UserCredentialController) Route() {
 	{
 		authGroup.POST("/register", u.Register)
 		authGroup.POST("/login", u.Login)
+		authGroup.POST("/logout", u.Logout)
 	}
 }
-func NewUserCredentialController(uc usecase.UserCredentialUsecase, g *gin.Engine) *UserCredentialController {
+func NewUserCredentialController(uc usecase.UserCredentialUsecase, g *gin.Engine, rediss *redis.Client) *UserCredentialController {
 	return &UserCredentialController{
 		userCredUc: uc,
 		gin:        g,
+		redisC:     rediss,
 	}
 }
