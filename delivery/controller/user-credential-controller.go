@@ -64,17 +64,15 @@ func (u UserCredentialController) Login(c *gin.Context) {
 func (u UserCredentialController) Logout(c *gin.Context) {
 	var ctx = context.Background()
 
-	var data struct {
-		CustEmail string `json:"email"`
-	}
+	var userLogout model.UserLogout
 
-	if err := c.ShouldBindJSON(&data); err != nil {
+	if err := c.ShouldBindJSON(&userLogout); err != nil {
 		c.AbortWithStatusJSON(400, gin.H{"Error": "Wrong JSON Data"})
 		return
 	}
 
 	//delete token
-	err := u.redisC.Del(ctx, "userEmail:"+data.CustEmail).Err()
+	err := u.redisC.Del(ctx, "userEmail:"+userLogout.CustEmail).Err()
 	if err != nil {
 		c.AbortWithStatusJSON(500, gin.H{"Error": "Failed to logout"})
 		return
