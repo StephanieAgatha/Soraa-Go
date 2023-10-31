@@ -45,6 +45,6 @@ jsonToken := paseto.JSONToken{
 - JWT
 - Paseto
 - Zap (Logging)
-
-#### Todo
 - Redis Cache
+ 
+
